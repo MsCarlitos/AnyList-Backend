@@ -12,10 +12,12 @@ import { SignupInput } from './../auth/dto/inputs/signup.input';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
+
 @Injectable()
 export class UsersService {
 
   private logger: Logger = new Logger('UsersService')
+
 
   constructor(
     @InjectRepository(User)
@@ -24,20 +26,25 @@ export class UsersService {
 
 
   async create( signupInput: SignupInput ): Promise<User> {
+    
     try {
+
         const newUser = this.usersRepository.create({
           ...signupInput,
           password: bcrypt.hashSync( signupInput.password, 10 )
         });
+
         return await this.usersRepository.save( newUser );
+
     } catch (error) {
       this.handleDBErrors( error );
     }
+
   }
 
   async findAll( roles: ValidRoles[] ): Promise<User[]> {
 
-    if ( roles.length === 0 )
+    if ( roles.length === 0 ) 
       return this.usersRepository.find({
         // TODO: No es necesario porque tenemos lazy la propiedad lastUpdateBy
         // relations: {
@@ -50,6 +57,8 @@ export class UsersService {
       .andWhere('ARRAY[roles] && ARRAY[:...roles]')
       .setParameter('roles', roles )
       .getMany();
+
+  
   }
 
   async findOneByEmail( email: string ): Promise<User> {
@@ -73,7 +82,7 @@ export class UsersService {
   }
 
   async update(
-    id: string,
+    id: string, 
     updateUserInput: UpdateUserInput,
     updateBy: User
   ): Promise<User> {
@@ -91,17 +100,25 @@ export class UsersService {
     } catch (error) {
       this.handleDBErrors( error );
     }
+    
+    
   }
 
   async block( id: string, adminUser: User ): Promise<User> {
+    
     const userToBlock = await this.findOneById( id );
 
     userToBlock.isActive = false;
     userToBlock.lastUpdateBy = adminUser;
+
     return await this.usersRepository.save( userToBlock );
+
   }
 
+
   private handleDBErrors( error: any ): never {
+
+    
     if (  error.code === '23505' ) {
       throw new BadRequestException( error.detail.replace('Key ','') );
     }
@@ -109,9 +126,11 @@ export class UsersService {
     if ( error.code == 'error-001' ) {
       throw new BadRequestException( error.detail.replace('Key ','') );
     }
+    
     this.logger.error( error );
 
     throw new InternalServerErrorException('Please check server logs');
 
   }
+
 }
